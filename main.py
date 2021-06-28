@@ -1,10 +1,10 @@
 import json
 import re
 import subprocess
-import pandas
-import yaml
 from xml.dom.minidom import parseString
 import dicttoxml
+import pandas
+import yaml
 
 
 def cmdout(cmd):
@@ -75,7 +75,7 @@ def json2xml(jsn, prefix=None):
     with open("temp.json", "x+") as tempfile:
         jsonout = jsn
         keys = [v for v in jsonout.values()]
-        maxrows = max(len(v) for v in keys)
+        max(len(v) for v in keys)
         jsonout2 = {}
         actualkeys = [kk for kk in jsonout.keys()]
 
