@@ -1,4 +1,4 @@
+sty==1.0.0rc1
 dicttoxml==1.7.4
 pandas==1.2.5
 PyYAML==5.4.1
-sty==1.0.0-rc.1
