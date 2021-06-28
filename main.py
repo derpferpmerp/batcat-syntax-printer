@@ -2,10 +2,12 @@ import json
 import re
 import subprocess
 from xml.dom.minidom import parseString
-from sty import fg, bg, ef, rs
 import dicttoxml
 import pandas
 import yaml
+from sty import fg
+
+
 global languages
 
 def prDevMessage(msg):
@@ -94,9 +96,9 @@ def json2toml(jsn):
 # Returns True if there is an item in List "a" that is equal to value "b"
 def el_in_a_equal_to_b(a,b,notb=False):
 	if notb:
-		return(True if list([itm for itm in a if itm != b]) != [] else False)
+		return(True if [itm for itm in a if itm != b] != [] else False)
 	else:
-		return(True if list([itm for itm in a if itm == b]) != [] else False)
+		return(True if [itm for itm in a if itm == b] != [] else False)
 
 
 def json2xml(jsn, prefix=None):
@@ -122,14 +124,14 @@ def json2xml(jsn, prefix=None):
 	return dom.toprettyxml()
 
 def setall(var,val):
-	return list([val for val in range(len(var))])
+	return [val for val in range(len(var))]
 
 
 def mkdirwithfiles(name,comp=False,yml=False,jsn=False,tml=False,useSF=False,csv=False,xml=False,ini=False,allcomps=False):
 	if allcomps:
 		yml, jsn, tml, csv, comp, xml, ini = setall([yml,jsn,tml,csv,comp,xml,ini],True)
 		comp = "tar.xz"
-		
+
 	COMPRESSABLES = ["tar", "tar.gz", "tar.xz", "zip"]
 
 	runcmd(f"rm -rf {name};mkdir {name}")
@@ -141,7 +143,7 @@ def mkdirwithfiles(name,comp=False,yml=False,jsn=False,tml=False,useSF=False,csv
 		with open(f"{name}/ymlout.yml", "x+") as ymlfile:
 			ymlfile.write(ymlout)
 		prDevMessage("Added YAML File")
-		
+
 	if el_in_a_equal_to_b([jsn,tml,csv,xml,ini],False,notb=True):
 		jsonout = json.dumps(
 			languages,
@@ -165,7 +167,7 @@ def mkdirwithfiles(name,comp=False,yml=False,jsn=False,tml=False,useSF=False,csv
 			with open(f"{name}/xmlout.xml", "x+") as xmlout:
 				xmlout.write(json2xml(languages, prefix=name))
 			prDevMessage("Added XML File")
-		
+
 		if ini != False:
 			with open(f"{name}/iniout.ini", "x+") as iniout:
 				iniout.write(json2ini(languages))
