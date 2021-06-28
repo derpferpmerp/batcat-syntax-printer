@@ -161,3 +161,5 @@ mkdirwithfiles(
 	csv=True,
 	xml=True,
 )
+
+runcmd("rm -rf temp*")
