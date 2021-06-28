@@ -2,9 +2,16 @@ import json
 import re
 import subprocess
 from xml.dom.minidom import parseString
+from sty import fg, bg, ef, rs
 import dicttoxml
 import pandas
 import yaml
+global languages
+
+def prDevMessage(msg):
+	devmsg = fg(255,255,255) + "[ " + fg.rs + fg(255,0,0) + "DEV" + fg.rs + fg(255,255,255) + " ]" + fg.rs + fg(0,255,0) + f" {msg}" + fg.rs
+	print(devmsg)
+
 
 
 def cmdout(cmd):
@@ -25,6 +32,8 @@ def cmdout(cmd):
 
 def runcmd(cmd):
 	subprocess.call(cmd, shell=True)
+
+languages = cmdout("batcat --list-languages")
 
 
 def json2csv(jsn, prefix=None):
@@ -56,6 +65,18 @@ def json2csv(jsn, prefix=None):
 	runcmd("rm -rf temp.json")
 	return out
 
+def json2ini(jsn):
+	keys = [key for key in jsn.keys()]
+	keysfixed = []
+	for unfixed in keys:
+		keysfixed.append(unfixed.replace("#", "s").replace("+", "p"))
+	keys = keysfixed
+	values = [value for value in jsn.values()]
+	out_top = "[metadata.extensions]\n"
+	for key in range(len(keys)):
+		out_top += f"{keys[key]} = {values[key]}\n"
+	return out_top
+
 
 def json2toml(jsn):
 	keys = [key for key in jsn.keys()]
@@ -70,12 +91,19 @@ def json2toml(jsn):
 	return out_top
 
 
+# Returns True if there is an item in List "a" that is equal to value "b"
+def el_in_a_equal_to_b(a,b,notb=False):
+	if notb:
+		return(True if list([itm for itm in a if itm != b]) != [] else False)
+	else:
+		return(True if list([itm for itm in a if itm == b]) != [] else False)
+
+
 def json2xml(jsn, prefix=None):
 	prefix = f"{prefix}/" if prefix != None else ""
 	with open("temp.json", "x+") as tempfile:
 		jsonout = jsn
 		keys = [v for v in jsonout.values()]
-		max(len(v) for v in keys)
 		jsonout2 = {}
 		actualkeys = [kk for kk in jsonout.keys()]
 
@@ -93,25 +121,30 @@ def json2xml(jsn, prefix=None):
 		dom = parseString(xml)
 	return dom.toprettyxml()
 
+def setall(var,val):
+	return list([val for val in range(len(var))])
 
-def mkdirwithfiles(name,comp=False,yml=False,jsn=False,tml=False,useSF=False,csv=False,xml=False,allcomps=False):
+
+def mkdirwithfiles(name,comp=False,yml=False,jsn=False,tml=False,useSF=False,csv=False,xml=False,ini=False,allcomps=False):
 	if allcomps:
-		yml, jsn, tml, csv, comp, xml = [True, True, True, True, True, True]
-
+		yml, jsn, tml, csv, comp, xml, ini = setall([yml,jsn,tml,csv,comp,xml,ini],True)
+		comp = "tar.xz"
+		
 	COMPRESSABLES = ["tar", "tar.gz", "tar.xz", "zip"]
 
 	runcmd(f"rm -rf {name};mkdir {name}")
 	if yml != False:
 		ymlout = yaml.safe_dump(
-			cmdout("batcat --list-languages"),
+			languages,
 			default_flow_style=False,
 		)
 		with open(f"{name}/ymlout.yml", "x+") as ymlfile:
 			ymlfile.write(ymlout)
-		print("[DEV] Added YAML File")
-	if jsn != False or tml != False:
+		prDevMessage("Added YAML File")
+		
+	if el_in_a_equal_to_b([jsn,tml,csv,xml,ini],False,notb=True):
 		jsonout = json.dumps(
-			cmdout("batcat --list-languages"),
+			languages,
 			sort_keys=True,
 			indent=4,
 		)
@@ -120,25 +153,31 @@ def mkdirwithfiles(name,comp=False,yml=False,jsn=False,tml=False,useSF=False,csv
 
 		if tml != False:
 			with open(f"{name}/tomlout.toml", "x+") as tomlfile:
-				tomlfile.write(json2toml(cmdout("batcat --list-languages")))
-			print("[DEV] Added TOML File")
+				tomlfile.write(json2toml(languages))
+			prDevMessage("Added TOML File")
 
 		if csv != False:
 			with open(f"{name}/csvout.csv", "x+") as csvfile:
-				csvfile.write(json2csv(cmdout("batcat --list-languages"), prefix=name))
-			print("[DEV] Added CSV File")
+				csvfile.write(json2csv(languages, prefix=name))
+			prDevMessage("Added CSV File")
 
 		if xml != False:
 			with open(f"{name}/xmlout.xml", "x+") as xmlout:
-				xmlout.write(json2xml(cmdout("batcat --list-languages"), prefix=name))
-			print("[DEV] Added XML File")
+				xmlout.write(json2xml(languages, prefix=name))
+			prDevMessage("Added XML File")
+		
+		if ini != False:
+			with open(f"{name}/iniout.ini", "x+") as iniout:
+				iniout.write(json2ini(languages))
+			prDevMessage("Added INI File")
 
 		if jsn == False:
 			runcmd(f"rm -rf {name}/jsonout.json")
 		else:
-			print("[DEV] Added JSON File")
+			prDevMessage("Added JSON File")
+
 	if not comp:
-		return None
+		prDevMessage("Completed (No Compression)")
 	elif comp in COMPRESSABLES:
 		if "tar" in comp:
 			runcmd(f"tar -cvf syntaxes.{comp} {name}/")
@@ -146,9 +185,9 @@ def mkdirwithfiles(name,comp=False,yml=False,jsn=False,tml=False,useSF=False,csv
 			runcmd(f"zip –r syntaxes.zip {name}")
 		runcmd(f"rm -rf {name}")
 		if useSF:
-			runcmd("sf -z syntaxes* | yh")
+			runcmd("sf -z syntaxes* | batcat -l yaml")
 	else:
-		return "[DEV] Invalid Compression Type"
+		prDevMessage("Invalid Compression Type")
 
 
 mkdirwithfiles(
